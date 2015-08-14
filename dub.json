@@ -1,0 +1,17 @@
+{
+	"name" : "datadriven",
+
+	"description" : "component entity system",
+	"authors" : [ "Andrey Penechko" ],
+	"license" : "BSL-1.0",
+
+	"dependencies" : {
+	},
+
+    "targetPath" : "bin",
+    "workingDirectory" : "bin",
+
+	"sourcePaths" : [ "source" ],
+    "mainSourceFile" : "source/datadriven/main.d",
+    "targetType" : "executable"
+}
