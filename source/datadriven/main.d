@@ -15,8 +15,9 @@ import datadriven.storage;
 
 void main()
 {
-	//writeln("BENCH ITERATION");
+	writeln("BENCH ITERATION");
 	//benchIteration();
+	benchIteration2();
 	writeln("BENCH JOIN");
 	//benchBinarySearchJoin();
 	//benchBinarySearchJoinFull();

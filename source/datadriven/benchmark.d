@@ -12,7 +12,7 @@ import std.typetuple;
 enum entityCountMax = 1_000_000;
 enum entityCountMed =   500_000;
 enum entityCountMin =   100_000;
-enum entityCount = 100_000;
+enum entityCount = 1000_000;
 enum numRuns = 10;
 
 void benchIteration()
@@ -48,6 +48,53 @@ void benchIteration()
 	auto range = r[].map!(a => (to!Duration(a)/numRuns).durf);
 	foreach(item; range)
 		item.writeln;
+}
+
+void benchIteration2()
+{
+	static struct Transform {
+		float x, y, z;
+	}
+
+	static struct Velocity1 {
+		float x, y, z;
+	}
+
+	static struct Velocity2 {
+		float x, y, z;
+	}
+
+	static struct Velocity3 {
+		float x, y, z;
+	}
+
+	static struct Entity {
+		Transform transform;
+		Velocity1 velocity1;
+		Velocity2 velocity2;
+		Velocity3 velocity3;
+	}
+
+	Entity[] entities = new Entity[entityCount];
+
+	foreach(ref e; entities) {
+		e.velocity1 = Velocity1(1, 1, 1);
+		e.velocity2 = Velocity2(1, 1, 1);
+		e.velocity3 = Velocity3(1, 1, 1);
+		e.transform = Transform(0, 0, 0);
+	}
+
+	StopWatch sw;
+	sw.start();
+
+	foreach(row; entities)
+	{
+		row.transform.x += row.velocity1.x * 2 + row.velocity2.x * 3 + row.velocity3.x * 4;
+		row.transform.y += row.velocity1.y * 2 + row.velocity2.y * 3 + row.velocity3.y * 4;
+		row.transform.z += row.velocity1.z * 2 + row.velocity2.z * 3 + row.velocity3.z * 4;
+	}
+
+	printBenchResult("AOS iteration %s", sw.peek);
 }
 
 void benchStupidSearchJoin()
@@ -278,12 +325,6 @@ void benchApiJoinBalanced2()
 		row.transform.z += row.velocity1.z * 2 + row.velocity2.z * 3 + row.velocity3.z * 4;
 	}
 
-	//writeln(transformStorage.components);
-
-	//genComponentIterationCode!(
-	//	HashmapComponentStorage!Transform,
-	//	HashmapComponentStorage!Velocity)
-	//	.writeln;
 	printBenchResult("Api hash join 4 %s", sw.peek);
 }
 
