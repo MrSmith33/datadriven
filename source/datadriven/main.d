@@ -18,9 +18,14 @@ void main()
 	writeln("BENCH ITERATION");
 	//benchIteration();
 	benchIteration2();
+	benchIteration4();
 	writeln("BENCH JOIN");
 	//benchBinarySearchJoin();
 	//benchBinarySearchJoinFull();
-	benchApiJoinBalanced();
-	benchApiJoinBalanced2();
+	benchApiFullJoin2!HashmapComponentStorage();
+	benchApiFullJoin2!CustomHashmapComponentStorage();
+	benchApiFullJoin4!HashmapComponentStorage();
+	benchApiFullJoin4!CustomHashmapComponentStorage();
+	benchApiPartialJoin!HashmapComponentStorage();
+	benchApiPartialJoin!CustomHashmapComponentStorage();
 }

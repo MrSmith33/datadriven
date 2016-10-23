@@ -9,10 +9,14 @@ import std.random;
 import std.traits;
 import std.typetuple;
 
+import datadriven.api;
+import datadriven.storage;
+import datadriven.components;
+
 enum entityCountMax = 1_000_000;
 enum entityCountMed =   500_000;
 enum entityCountMin =   100_000;
-enum entityCount = 1000_000;
+enum entityCount = 1_000_000;
 enum numRuns = 10;
 
 void benchIteration()
@@ -52,49 +56,60 @@ void benchIteration()
 
 void benchIteration2()
 {
-	static struct Transform {
-		float x, y, z;
-	}
-
-	static struct Velocity1 {
-		float x, y, z;
-	}
-
-	static struct Velocity2 {
-		float x, y, z;
-	}
-
-	static struct Velocity3 {
-		float x, y, z;
-	}
-
 	static struct Entity {
 		Transform transform;
-		Velocity1 velocity1;
-		Velocity2 velocity2;
-		Velocity3 velocity3;
+		Velocity velocity;
 	}
 
 	Entity[] entities = new Entity[entityCount];
 
 	foreach(ref e; entities) {
-		e.velocity1 = Velocity1(1, 1, 1);
-		e.velocity2 = Velocity2(1, 1, 1);
-		e.velocity3 = Velocity3(1, 1, 1);
+		e.velocity = Velocity(1, 1, 1);
 		e.transform = Transform(0, 0, 0);
 	}
 
 	StopWatch sw;
 	sw.start();
 
-	foreach(row; entities)
+	foreach(i, ref row; entities)
+	{
+		row.transform.x += row.velocity.x * 2;
+		row.transform.y += row.velocity.y * 2;
+		row.transform.z += row.velocity.z * 2;
+	}
+
+	printBenchResult("%s : AOS iteration, 2 components", sw.peek);
+}
+
+void benchIteration4()
+{
+	static struct Entity {
+		Transform transform;
+		Velocity velocity1;
+		Velocity velocity2;
+		Velocity velocity3;
+	}
+
+	Entity[] entities = new Entity[entityCount];
+
+	foreach(ref e; entities) {
+		e.velocity1 = Velocity(1, 1, 1);
+		e.velocity2 = Velocity(1, 1, 1);
+		e.velocity3 = Velocity(1, 1, 1);
+		e.transform = Transform(0, 0, 0);
+	}
+
+	StopWatch sw;
+	sw.start();
+
+	foreach(i, ref row; entities)
 	{
 		row.transform.x += row.velocity1.x * 2 + row.velocity2.x * 3 + row.velocity3.x * 4;
 		row.transform.y += row.velocity1.y * 2 + row.velocity2.y * 3 + row.velocity3.y * 4;
 		row.transform.z += row.velocity1.z * 2 + row.velocity2.z * 3 + row.velocity3.z * 4;
 	}
 
-	printBenchResult("AOS iteration %s", sw.peek);
+	printBenchResult("%s : AOS iteration, 4 components", sw.peek);
 }
 
 void benchStupidSearchJoin()
@@ -243,14 +258,10 @@ void benchBinarySearchJoinFull()
 	printBenchResult("binary search %s", sw.peek);
 }
 
-void benchApiJoinBalanced()
+void benchApiFullJoin2(alias StorageT)()
 {
-	import datadriven.api;
-	import datadriven.storage;
-	import datadriven.components;
-
-	HashmapComponentStorage!Transform transformStorage;
-	HashmapComponentStorage!Velocity velocityStorage;
+	StorageT!Transform transformStorage;
+	StorageT!Velocity velocityStorage;
 
 	foreach(index; 0..entityCount)
 	{
@@ -270,48 +281,22 @@ void benchApiJoinBalanced()
 		row.transform.z += row.velocity.z;
 	}
 
-	printBenchResult("Api hash join %s", sw.peek);
+	printBenchResult("%s : Full hash join, 2 components, "~__traits(identifier, StorageT), sw.peek);
 }
 
-void benchApiJoinBalanced2()
+void benchApiFullJoin4(alias StorageT)()
 {
-	import datadriven.api;
-	import datadriven.storage;
-	import datadriven.components;
+	StorageT!Transform transformStorage;
+	StorageT!Velocity1 velocity1Storage;
+	StorageT!Velocity2 velocity2Storage;
+	StorageT!Velocity3 velocity3Storage;
 
-	static struct Velocity1 {
-		float x, y, z;
-	}
-
-	static struct Velocity2 {
-		float x, y, z;
-	}
-
-	static struct Velocity3 {
-		float x, y, z;
-	}
-
-	static struct Transform {
-		float x, y, z;
-	}
-
-	HashmapComponentStorage!Transform transformStorage;
-	HashmapComponentStorage!Velocity1 velocity1Storage;
-	HashmapComponentStorage!Velocity2 velocity2Storage;
-	HashmapComponentStorage!Velocity3 velocity3Storage;
-
-	foreach(index; 0..entityCountMin) {
+	foreach(index; 0..entityCount) {
+		transformStorage.add(EntityId(index), Transform(0, 0, 0));
 		velocity1Storage.add(EntityId(index), Velocity1(1, 1, 1));
 		velocity2Storage.add(EntityId(index), Velocity2(1, 1, 1));
 		velocity3Storage.add(EntityId(index), Velocity3(1, 1, 1));
 	}
-	foreach(index; 0..entityCountMax) {
-		transformStorage.add(EntityId(index), Transform(0, 0, 0));
-	}
-	//foreach(index; 0..entityCountMax) {
-	//	transformStorage.add(EntityId(index), Transform(0, 0, 0));
-	//	velocityStorage.add(EntityId(index), Velocity(1, 1, 1));
-	//}
 
 	auto query = componentQuery(transformStorage, velocity1Storage, velocity2Storage, velocity3Storage);
 
@@ -325,7 +310,41 @@ void benchApiJoinBalanced2()
 		row.transform.z += row.velocity1.z * 2 + row.velocity2.z * 3 + row.velocity3.z * 4;
 	}
 
-	printBenchResult("Api hash join 4 %s", sw.peek);
+	printBenchResult("%s : Full hash join, 4 components, "~__traits(identifier, StorageT), sw.peek);
+}
+
+void benchApiPartialJoin(alias StorageT)()
+{
+	StorageT!Transform transformStorage;
+	StorageT!Velocity1 velocity1Storage;
+	StorageT!Velocity2 velocity2Storage;
+	StorageT!Velocity3 velocity3Storage;
+
+	foreach(index; 0..entityCountMin) {
+		velocity1Storage.add(EntityId(index), Velocity1(1, 1, 1));
+		velocity2Storage.add(EntityId(index), Velocity2(1, 1, 1));
+	}
+	foreach(index; 0..entityCountMed) {
+		velocity3Storage.add(EntityId(index), Velocity3(1, 1, 1));
+	}
+	foreach(index; 0..entityCountMax) {
+		transformStorage.add(EntityId(index), Transform(0, 0, 0));
+	}
+
+	auto query = componentQuery(transformStorage, velocity1Storage, velocity2Storage, velocity3Storage);
+
+	StopWatch sw;
+	sw.start();
+
+	foreach(row; query)
+	{
+		row.transform.x += row.velocity1.x * 2 + row.velocity2.x * 3 + row.velocity3.x * 4;
+		row.transform.y += row.velocity1.y * 2 + row.velocity2.y * 3 + row.velocity3.y * 4;
+		row.transform.z += row.velocity1.z * 2 + row.velocity2.z * 3 + row.velocity3.z * 4;
+	}
+
+	//writefln("e %s", entities[0].transform);
+	printBenchResult("%s : Partial hash join, 4 components, "~__traits(identifier, StorageT), sw.peek);
 }
 
 void printBenchResult(string formatting, TickDuration dur)
