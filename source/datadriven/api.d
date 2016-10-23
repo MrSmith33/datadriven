@@ -16,16 +16,43 @@ template isComponentStorage(CS, C)
 	{
 		CS cs = CS.init;
 		C c = C.init;
-		EntityId eid = EntityId.init;
+		EntityId id = EntityId.init;
 
-		cs.add(eid, c); // Can add component
-		cs.remove(eid); // Can remove component
-		C* cptr = cs.get(eid); // Can get component pointer
+		cs.add(id, c); // Can add component
+		cs.remove(id); // Can remove component
+		C* cptr = cs.get(id); // Can get component pointer
 
 		foreach(key, value; cs)
 		{
-			eid = key;
+			id = key;
 			c = value = c;
+		}
+	}));
+}
+
+template isAnyComponentStorage(CS)
+{
+	static if (is(CS.ComponentType C))
+		enum bool isAnyComponentStorage = isComponentStorage!(CS, C);
+	else
+		enum bool isAnyComponentStorage = false;
+}
+
+template isEntitySet(S)
+{
+	enum bool isEntitySet = is(typeof(
+	(inout int = 0)
+	{
+		S s = S.init;
+		EntityId id = EntityId.init;
+
+		s.add(id); // Can add component
+		s.remove(id); // Can remove component
+		bool contains = s.get(id); // Can check presence
+
+		foreach(key; s)
+		{
+			id = key;
 		}
 	}));
 }
@@ -35,15 +62,34 @@ unittest
 	struct A {}
 	struct B
 	{
+		void add(EntityId);
+		void remove(EntityId);
+		bool get(EntityId);
+		int opApply(int delegate(in EntityId) del) {
+			return 0;
+		}
+	}
+	struct C
+	{
 		void add(EntityId, int);
 		void remove(EntityId);
 		int* get(EntityId);
-		auto byKeyValue() @property {
-			return (int[EntityId]).init.byKeyValue;
+		int opApply(int delegate(in EntityId, ref int) del) {
+			return 0;
 		}
+		alias ComponentType = int;
 	}
 	static assert(!isComponentStorage!(A, int));
-	static assert( isComponentStorage!(B, int));
+	static assert(!isAnyComponentStorage!A);
+	static assert(!isEntitySet!(A));
+
+	static assert(!isComponentStorage!(B, int));
+	static assert(!isAnyComponentStorage!B);
+	static assert( isEntitySet!(B));
+
+	static assert( isComponentStorage!(C, int));
+	static assert( isAnyComponentStorage!C);
+	static assert(!isEntitySet!(C));
 }
 
 auto componentQuery(ComponentStorages...)(ComponentStorages storages)
@@ -53,12 +99,11 @@ auto componentQuery(ComponentStorages...)(ComponentStorages storages)
 
 struct ComponentQuery(ComponentStorages...)
 {
-	mixin(genComponentStorages!(ComponentStorages));
-
+	mixin(genComponentStorages!ComponentStorages);
 	mixin(genRowDefinition!ComponentStorages);
 
-	// Sort component storages by length.
-	// Then iterate by smallest storage to reduce number of lookups.
+	// Sorts component storages by length.
+	// Then iterates by smallest storage to reduce number of lookups.
 	int opApply(scope int delegate(Row) dg)
 	{
 		static struct StorageLength
@@ -73,7 +118,7 @@ struct ComponentQuery(ComponentStorages...)
 		foreach(size_t i, cs; ComponentStorages)
 		{
 			lengths[i].index = i;
-			lengths[i].length = mixin(genComponentStorageName!(cs) ~ ".length");
+			lengths[i].length = mixin(genComponentStorageName!(cs, i) ~ ".length");
 		}
 
 		import std.algorithm : sort;
@@ -83,7 +128,7 @@ struct ComponentQuery(ComponentStorages...)
 		int result = 0;
 		Row row;
 
-		mixin(genComponentIterationCode!(ComponentStorages));
+		mixin(genComponentIterationCode!ComponentStorages);
 
 		return result;
 	}
@@ -96,40 +141,63 @@ struct ComponentQuery(ComponentStorages...)
 
 // // example
 ///////////////////////////////////////////////////////////////////////////////
-// genComponentIterationCode!(HashmapComponentStorage!Transform, HashmapComponentStorage!Velocity)
+// genComponentIterationCode!(EntitySet, EntitySet, HashmapComponentStorage!Velocity)
 ///////////////////////////////////////////////////////////////////////////////
 // // yields
 // switch(lengths[0].index) {
-// case 0:
-//     foreach(key, value; _transformStorage) {
-//         row.eid = key;
-//         row.transform = &value;
-//
-//         auto component1 = _velocityStorage.get(key);
-//         if (component1 is null) continue;
-//         row.velocity = component1;
-//
-//         result = dg(row);
-//         if (result)
-//             break;
-//     }
-//     break;
-// case 1:
-//     foreach(pair; _velocityStorage.byKeyValue) {
-//         row.eid = pair.key;
-//         row.velocity = &(pair.value());
-//
-//         auto component0 = _transformStorage.get(pair.key);
-//         if (component0 is null) continue;
-//         row.transform = component0;
-//
-//         result = dg(row);
-//         if (result)
-//             break;
-//     }
-//     break;
-// default: assert(0);
+//   case 0:
+//       foreach(key; _entity_set_0) {
+//           row.id = key;
+// 
+//           bool component_1 = _entity_set_1.get(key);
+//           if (!component_1) continue;
+// 
+//           auto component_2 = _velocity_2_storage.get(key);
+//           if (component_2 is null) continue;
+//           row.velocity_2 = component_2;
+// 
+//           result = dg(row);
+//           if (result)
+//               break;
+//       }
+//       break;
+//   case 1:
+//       foreach(key; _entity_set_1) {
+//           row.id = key;
+// 
+//           bool component_0 = _entity_set_0.get(key);
+//           if (!component_0) continue;
+// 
+//           auto component_2 = _velocity_2_storage.get(key);
+//           if (component_2 is null) continue;
+//           row.velocity_2 = component_2;
+// 
+//           result = dg(row);
+//           if (result)
+//               break;
+//       }
+//       break;
+//   case 2:
+//       foreach(key, value; _velocity_2_storage) {
+//           row.id = key;
+//           row.velocity_2 = &value;
+// 
+//           bool component_0 = _entity_set_0.get(key);
+//           if (!component_0) continue;
+// 
+//           bool component_1 = _entity_set_1.get(key);
+//           if (!component_1) continue;
+// 
+//           result = dg(row);
+//           if (result)
+//               break;
+//       }
+//       break;
+//   default: assert(0);
+// }
 // // as code inside ComponentQuery.opApply()
+
+
 
 string genComponentIterationCode(ComponentStorages...)()
 {
@@ -138,26 +206,44 @@ string genComponentIterationCode(ComponentStorages...)()
 	result ~= "switch(lengths[0].index) {\n";
 
 	// gen code for each case when table has fewest items
-	foreach(i, cs1; ComponentStorages)
+	foreach(i, CS_1; ComponentStorages)
 	{
 		string istr = i.to!string;
 		result ~=  "\tcase "~istr~":\n";
 		//result ~=  "writeln("~istr~");\n";
 
-		result ~=  "\t\tforeach(key, value; " ~ genComponentStorageName!(ComponentStorages[i]) ~ ") {\n";
-		// gen component selection for shortest table
-		result ~=  "\t\t\trow.eid = key;\n";
-		result ~=  "\t\t\trow." ~ genComponentName!(ComponentStorages[i]) ~" = &value;\n\n";
+		static if(isAnyComponentStorage!CS_1)
+		{
+			result ~=  "\t\tforeach(key, value; " ~ genComponentStorageName!(CS_1, i) ~ ") {\n";
+			// gen component selection for shortest table
+			result ~=  "\t\t\trow.id = key;\n";
+			result ~=  "\t\t\trow." ~ genRowComponentName!(CS_1, i) ~" = &value;\n\n";
+		}
+		else
+		{
+			result ~=  "\t\tforeach(key; " ~ genComponentStorageName!(CS_1, i) ~ ") {\n";
+			// gen component selection for shortest table
+			result ~=  "\t\t\trow.id = key;\n\n";
+		}
 
 		// gen component selection for other tables
-		foreach(j, cs2; ComponentStorages)
+		foreach(j, CS_2; ComponentStorages)
 		if (i != j)
 		{
 			// gen component selection for other tables via random access lookup
-			string jstr = j.to!string;
-			result ~= "\t\t\tauto component"~ jstr ~" = " ~ genComponentStorageName!(ComponentStorages[j]) ~ ".get(key);\n";
-			result ~= "\t\t\tif (component"~ jstr ~" is null) continue;\n";
-			result ~= "\t\t\trow." ~ genComponentName!(ComponentStorages[j]) ~ " = component"~ jstr ~";\n\n";
+			static if(isAnyComponentStorage!CS_2)
+			{
+				string jstr = j.to!string;
+				result ~= "\t\t\tauto component_"~ jstr ~" = " ~ genComponentStorageName!(CS_2, j) ~ ".get(key);\n";
+				result ~= "\t\t\tif (component_"~ jstr ~" is null) continue;\n";
+				result ~= "\t\t\trow." ~ genRowComponentName!(CS_2, j) ~ " = component_"~ jstr ~";\n\n";
+			}
+			else
+			{
+				string jstr = j.to!string;
+				result ~= "\t\t\tbool component_"~ jstr ~" = " ~ genComponentStorageName!(CS_2, j) ~ ".get(key);\n";
+				result ~= "\t\t\tif (!component_"~ jstr ~") continue;\n\n";
+			}
 		}
 
 		// call foreach body passing current row
@@ -177,11 +263,12 @@ string genComponentIterationCode(ComponentStorages...)()
 
 // // example
 ///////////////////////////////////////////////////////////////////////////////
-// genComponentStorages!(HashmapComponentStorage!Transform, HashmapComponentStorage!Velocity);
+// genComponentStorages!(HashmapComponentStorage!Transform, EntitySet, HashmapComponentStorage!Velocity);
 ///////////////////////////////////////////////////////////////////////////////
 // // yields
-// private HashmapComponentStorage!Transform _transformStorage;
-// private HashmapComponentStorage!Velocity _velocityStorage;
+// private HashmapComponentStorage!Transform _transform_0_storage;
+// private EntitySet _entity_set_1;
+// private HashmapComponentStorage!Velocity _velocity_2_storage;
 // // as fields inside ComponentQuery
 
 string genComponentStorages(ComponentStorages...)()
@@ -191,37 +278,47 @@ string genComponentStorages(ComponentStorages...)()
 	foreach(i, cs; ComponentStorages)
 	{
 		result ~= "private ComponentStorages[" ~ i.to!string ~ "] " ~
-			genComponentStorageName!cs ~ ";\n";
+			genComponentStorageName!(cs, i) ~ ";\n";
 	}
 
 	return result;
 }
 
-string genComponentStorageName(ComponentStorage)()
+string genComponentStorageName(ComponentStorage, uint i)()
 {
-	return "_" ~ genComponentName!ComponentStorage ~ "Storage";
+	static if(isAnyComponentStorage!ComponentStorage)
+		return "_" ~ genStorageComponentName!ComponentStorage ~ "_" ~ i.to!string ~ "_storage";
+	else
+		return "_entity_set_" ~ i.to!string;
 }
 
-string genComponentName(ComponentStorage)()
+string genStorageComponentName(ComponentStorage)()
 {
 	alias C = TemplateArgsOf!ComponentStorage[0];
-	string ident = Unqual!C.stringof;
+	return genComponentName!C;
+}
+
+string genComponentName(Component)()
+{
+	string ident = Unqual!Component.stringof;
 	import std.uni : toLower;
 	return toLower(ident[0]).to!string ~ ident[1..$];
 }
 
 // // example
 ///////////////////////////////////////////////////////////////////////////////
-// genComponentStorages!(HashmapComponentStorage!Transform, HashmapComponentStorage!Velocity);
+// genComponentStorages!(HashmapComponentStorage!Transform, EntitySet, HashmapComponentStorage!Velocity);
 ///////////////////////////////////////////////////////////////////////////////
 // // yields
 // static struct Row
 // {
-//     EntityId eid;
-//     Transform* transform;
-//     Velocity* velocity;
+//     EntityId id;
+//     Transform* transform_0;
+//     Velocity* velocity_2;
 // }
 // // as type definition inside ComponentQuery
+// // numbers start from zero. entity sets affect numbers.
+// // Entity sets need no entries since they only affect which entities will be returned by query.
 
 string genRowDefinition(ComponentStorages...)()
 {
@@ -230,13 +327,22 @@ string genRowDefinition(ComponentStorages...)()
 	result =
 		"static struct Row\n"~
 		"{\n"~
-		"\tEntityId eid;\n";
+		"\tEntityId id;\n";
 
-	foreach(i, ComponentStorage; ComponentStorages)
+	foreach(i, CS; ComponentStorages)
 	{
-		result ~= "\tTemplateArgsOf!(ComponentStorages["~ i.to!string ~"])[0]* "~ genComponentName!ComponentStorage ~";\n";
+		static if (isAnyComponentStorage!CS)
+		{
+			result ~= "\tTemplateArgsOf!(ComponentStorages["~ i.to!string ~"])[0]* "~
+				genRowComponentName!(CS, i) ~ ";\n";
+		}
 	}
 	result ~= "}\n";
 
 	return result;
+}
+
+string genRowComponentName(ComponentStorage, uint i)()
+{
+	return genStorageComponentName!ComponentStorage ~ "_" ~ i.to!string;
 }

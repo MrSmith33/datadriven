@@ -2,9 +2,10 @@ module datadriven.storage;
 
 import datadriven.api;
 
-struct HashmapComponentStorage(ComponentType)
+struct HashmapComponentStorage(_ComponentType)
 {
 	private ComponentType[EntityId] components;
+	alias ComponentType = _ComponentType;
 
 	void add(EntityId eid, ComponentType component)
 	{
@@ -38,9 +39,10 @@ struct HashmapComponentStorage(ComponentType)
 static assert(isComponentStorage!(HashmapComponentStorage!int, int));
 
 import hashmap;
-struct CustomHashmapComponentStorage(ComponentType)
+struct CustomHashmapComponentStorage(_ComponentType)
 {
 	private HashMap!(EntityId, ComponentType) components;
+	alias ComponentType = _ComponentType;
 
 	void add(EntityId eid, ComponentType component)
 	{
@@ -69,3 +71,36 @@ struct CustomHashmapComponentStorage(ComponentType)
 }
 
 static assert(isComponentStorage!(CustomHashmapComponentStorage!int, int));
+
+import hashset;
+struct EntitySet
+{
+	private HashSet!EntityId entities;
+
+	void add(EntityId eid)
+	{
+		assert(eid !in entities);
+		entities.put(eid);
+	}
+
+	void remove(EntityId eid)
+	{
+		entities.remove(eid);
+	}
+
+	size_t length() @property
+	{
+		return entities.length;
+	}
+
+	bool get(EntityId eid)
+	{
+		return eid in entities;
+	}
+
+	int opApply(int delegate(in EntityId) del) {
+		return entities.opApply(del);
+	}
+}
+
+static assert(isEntitySet!(EntitySet));

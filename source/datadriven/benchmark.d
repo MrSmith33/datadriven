@@ -276,9 +276,9 @@ void benchApiFullJoin2(alias StorageT)()
 
 	foreach(row; query)
 	{
-		row.transform.x += row.velocity.x;
-		row.transform.y += row.velocity.y;
-		row.transform.z += row.velocity.z;
+		row.transform_0.x += row.velocity_1.x;
+		row.transform_0.y += row.velocity_1.y;
+		row.transform_0.z += row.velocity_1.z;
 	}
 
 	printBenchResult("%s : Full hash join, 2 components, "~__traits(identifier, StorageT), sw.peek);
@@ -287,27 +287,27 @@ void benchApiFullJoin2(alias StorageT)()
 void benchApiFullJoin4(alias StorageT)()
 {
 	StorageT!Transform transformStorage;
-	StorageT!Velocity1 velocity1Storage;
-	StorageT!Velocity2 velocity2Storage;
-	StorageT!Velocity3 velocity3Storage;
+	StorageT!Velocity velocityStorage1;
+	StorageT!Velocity velocityStorage2;
+	StorageT!Velocity velocityStorage3;
 
 	foreach(index; 0..entityCount) {
 		transformStorage.add(EntityId(index), Transform(0, 0, 0));
-		velocity1Storage.add(EntityId(index), Velocity1(1, 1, 1));
-		velocity2Storage.add(EntityId(index), Velocity2(1, 1, 1));
-		velocity3Storage.add(EntityId(index), Velocity3(1, 1, 1));
+		velocityStorage1.add(EntityId(index), Velocity(1, 1, 1));
+		velocityStorage2.add(EntityId(index), Velocity(1, 1, 1));
+		velocityStorage3.add(EntityId(index), Velocity(1, 1, 1));
 	}
 
-	auto query = componentQuery(transformStorage, velocity1Storage, velocity2Storage, velocity3Storage);
+	auto query = componentQuery(transformStorage, velocityStorage1, velocityStorage2, velocityStorage3);
 
 	StopWatch sw;
 	sw.start();
 
 	foreach(row; query)
 	{
-		row.transform.x += row.velocity1.x * 2 + row.velocity2.x * 3 + row.velocity3.x * 4;
-		row.transform.y += row.velocity1.y * 2 + row.velocity2.y * 3 + row.velocity3.y * 4;
-		row.transform.z += row.velocity1.z * 2 + row.velocity2.z * 3 + row.velocity3.z * 4;
+		row.transform_0.x += row.velocity_1.x * 2 + row.velocity_2.x * 3 + row.velocity_3.x * 4;
+		row.transform_0.y += row.velocity_1.y * 2 + row.velocity_2.y * 3 + row.velocity_3.y * 4;
+		row.transform_0.z += row.velocity_1.z * 2 + row.velocity_2.z * 3 + row.velocity_3.z * 4;
 	}
 
 	printBenchResult("%s : Full hash join, 4 components, "~__traits(identifier, StorageT), sw.peek);
@@ -316,35 +316,79 @@ void benchApiFullJoin4(alias StorageT)()
 void benchApiPartialJoin(alias StorageT)()
 {
 	StorageT!Transform transformStorage;
-	StorageT!Velocity1 velocity1Storage;
-	StorageT!Velocity2 velocity2Storage;
-	StorageT!Velocity3 velocity3Storage;
+	StorageT!Velocity velocityStorage1;
+	StorageT!Velocity velocityStorage2;
+	StorageT!Velocity velocityStorage3;
 
 	foreach(index; 0..entityCountMin) {
-		velocity1Storage.add(EntityId(index), Velocity1(1, 1, 1));
-		velocity2Storage.add(EntityId(index), Velocity2(1, 1, 1));
+		velocityStorage1.add(EntityId(index), Velocity(1, 1, 1));
+		velocityStorage2.add(EntityId(index), Velocity(1, 1, 1));
 	}
 	foreach(index; 0..entityCountMed) {
-		velocity3Storage.add(EntityId(index), Velocity3(1, 1, 1));
+		velocityStorage3.add(EntityId(index), Velocity(1, 1, 1));
 	}
 	foreach(index; 0..entityCountMax) {
 		transformStorage.add(EntityId(index), Transform(0, 0, 0));
 	}
 
-	auto query = componentQuery(transformStorage, velocity1Storage, velocity2Storage, velocity3Storage);
+	auto query = componentQuery(transformStorage, velocityStorage1, velocityStorage2, velocityStorage3);
 
 	StopWatch sw;
 	sw.start();
 
 	foreach(row; query)
 	{
-		row.transform.x += row.velocity1.x * 2 + row.velocity2.x * 3 + row.velocity3.x * 4;
-		row.transform.y += row.velocity1.y * 2 + row.velocity2.y * 3 + row.velocity3.y * 4;
-		row.transform.z += row.velocity1.z * 2 + row.velocity2.z * 3 + row.velocity3.z * 4;
+		row.transform_0.x += row.velocity_1.x * 2 + row.velocity_2.x * 3 + row.velocity_3.x * 4;
+		row.transform_0.y += row.velocity_1.y * 2 + row.velocity_2.y * 3 + row.velocity_3.y * 4;
+		row.transform_0.z += row.velocity_1.z * 2 + row.velocity_2.z * 3 + row.velocity_3.z * 4;
 	}
 
 	//writefln("e %s", entities[0].transform);
 	printBenchResult("%s : Partial hash join, 4 components, "~__traits(identifier, StorageT), sw.peek);
+}
+
+void test()
+{
+	EntitySet entities1;
+	EntitySet entities2;
+	CustomHashmapComponentStorage!Velocity velocityStorage;
+	auto query = componentQuery(entities1, entities2, velocityStorage);
+}
+
+void benchApiPartialJoinSet()
+{
+	EntitySet entities;
+	CustomHashmapComponentStorage!Transform transformStorage;
+	CustomHashmapComponentStorage!Velocity velocityStorage1;
+	CustomHashmapComponentStorage!Velocity velocityStorage2;
+	CustomHashmapComponentStorage!Velocity velocityStorage3;
+
+	foreach(index; 0..entityCountMin) {
+		entities.add(index);
+		velocityStorage1.add(EntityId(index), Velocity(1, 1, 1));
+		velocityStorage2.add(EntityId(index), Velocity(1, 1, 1));
+	}
+	foreach(index; 0..entityCountMed) {
+		velocityStorage3.add(EntityId(index), Velocity(1, 1, 1));
+	}
+	foreach(index; 0..entityCountMax) {
+		transformStorage.add(EntityId(index), Transform(0, 0, 0));
+	}
+
+	auto query = componentQuery(entities, transformStorage, velocityStorage1, velocityStorage2, velocityStorage3);
+
+	StopWatch sw;
+	sw.start();
+
+	foreach(row; query)
+	{
+		row.transform_1.x += row.velocity_2.x * 2 + row.velocity_3.x * 3 + row.velocity_4.x * 4;
+		row.transform_1.y += row.velocity_2.y * 2 + row.velocity_3.y * 3 + row.velocity_4.y * 4;
+		row.transform_1.z += row.velocity_2.z * 2 + row.velocity_3.z * 3 + row.velocity_4.z * 4;
+	}
+
+	//writefln("e %s", entities[0].transform);
+	printBenchResult("%s : Partial hash join, 4 components + HashSet", sw.peek);
 }
 
 void printBenchResult(string formatting, TickDuration dur)
