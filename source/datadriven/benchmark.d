@@ -12,6 +12,7 @@ import std.typetuple;
 import datadriven.api;
 import datadriven.storage;
 import datadriven.components;
+import datadriven.query;
 
 enum entityCountMax = 1_000_000;
 enum entityCountMed =   500_000;
@@ -343,7 +344,6 @@ void benchApiPartialJoin(alias StorageT)()
 		row.transform_0.z += row.velocity_1.z * 2 + row.velocity_2.z * 3 + row.velocity_3.z * 4;
 	}
 
-	//writefln("e %s", entities[0].transform);
 	printBenchResult("%s : Partial hash join, 4 components, "~__traits(identifier, StorageT), sw.peek);
 }
 
@@ -387,8 +387,40 @@ void benchApiPartialJoinSet()
 		row.transform_1.z += row.velocity_2.z * 2 + row.velocity_3.z * 3 + row.velocity_4.z * 4;
 	}
 
-	//writefln("e %s", entities[0].transform);
-	printBenchResult("%s : Partial hash join, 4 components + HashSet", sw.peek);
+	printBenchResult("%s : Partial hash join, 4 components + EntitySet", sw.peek);
+}
+
+void benchApiPartialJoinOnlySet()
+{
+	EntitySet entities1;
+	EntitySet entities2;
+	EntitySet entities3;
+	EntitySet entities4;
+
+	foreach(index; 0..entityCountMin) {
+		entities1.add(index);
+		entities2.add(index);
+	}
+	foreach(index; 0..entityCountMed) {
+		entities3.add(index);
+	}
+	foreach(index; 0..entityCountMax) {
+		entities4.add(index);
+	}
+
+	auto query = componentQuery(entities1, entities2, entities3, entities4);
+
+	StopWatch sw;
+	sw.start();
+
+	size_t counter;
+	foreach(row; query)
+	{
+		++counter;
+	}
+
+	printBenchResult("%s : Partial hash join, 4 EntitySets", sw.peek);
+	writefln("counter %s", counter);
 }
 
 void printBenchResult(string formatting, TickDuration dur)

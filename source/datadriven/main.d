@@ -29,4 +29,5 @@ void main()
 	benchApiPartialJoin!HashmapComponentStorage();
 	benchApiPartialJoin!CustomHashmapComponentStorage();
 	benchApiPartialJoinSet();
+	benchApiPartialJoinOnlySet();
 }
