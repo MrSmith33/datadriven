@@ -13,6 +13,7 @@ import datadriven.api;
 import datadriven.storage;
 import datadriven.components;
 import datadriven.query;
+import datadriven.entityman;
 
 enum entityCountMax = 1_000_000;
 enum entityCountMed =   500_000;
@@ -345,6 +346,40 @@ void benchApiPartialJoin(alias StorageT)()
 	}
 
 	printBenchResult("%s : Partial hash join, 4 components, "~__traits(identifier, StorageT), sw.peek);
+}
+
+void benchApiPartialJoinEman(alias StorageT)()
+{
+	EntityManager eman;
+
+	eman.registerComponent!Transform("transform");
+	eman.registerComponent!Velocity1("velocity1");
+	eman.registerComponent!Velocity2("velocity2");
+	eman.registerComponent!Velocity3("velocity3");
+
+	foreach(index; 0..entityCountMin) {
+		eman.add(EntityId(index), Velocity1(1, 1, 1), Velocity2(1, 1, 1));
+	}
+	foreach(index; 0..entityCountMed) {
+		eman.add(EntityId(index), Velocity3(1, 1, 1));
+	}
+	foreach(index; 0..entityCountMax) {
+		eman.add(EntityId(index), Transform(0, 0, 0));
+	}
+
+	auto query = eman.query!(Transform, Velocity1, Velocity2, Velocity3);
+
+	StopWatch sw;
+	sw.start();
+
+	foreach(row; query)
+	{
+		row.transform_0.x += row.velocity1_1.x * 2 + row.velocity2_2.x * 3 + row.velocity3_3.x * 4;
+		row.transform_0.y += row.velocity1_1.y * 2 + row.velocity2_2.y * 3 + row.velocity3_3.y * 4;
+		row.transform_0.z += row.velocity1_1.z * 2 + row.velocity2_2.z * 3 + row.velocity3_3.z * 4;
+	}
+
+	printBenchResult("%s : Partial hash join, 4 components, eman, "~__traits(identifier, StorageT), sw.peek);
 }
 
 void test()

@@ -1,6 +1,7 @@
 module datadriven.storage;
 
 import datadriven.api;
+import cbor;
 
 struct HashmapComponentStorage(_ComponentType)
 {
@@ -68,6 +69,31 @@ struct CustomHashmapComponentStorage(_ComponentType)
 	int opApply(int delegate(in ref EntityId, ref ComponentType) del) {
 		return components.opApply(del);
 	}
+
+	void serialize(Sink)(Sink sink)
+	{
+		encodeCborMapHeader(sink, components.length);
+		foreach(key, value; components) {
+			encodeCbor(sink, key);
+			encodeCbor(sink, value);
+		}
+	}
+
+	void deserialize(ubyte[] input)
+	{
+		components.clear();
+		CborToken token = decodeCborToken(input);
+		if (token.type == CborTokenType.mapHeader) {
+			size_t lengthToRead = cast(size_t)token.uinteger;
+			components.reserve(lengthToRead);
+			while (lengthToRead > 0) {
+				auto eid = decodeCborSingle!EntityId(input);
+				auto component = decodeCborSingleDup!ComponentType(input);
+				components[eid] = component;
+				--lengthToRead;
+			}
+		}
+	}
 }
 
 static assert(isComponentStorage!(CustomHashmapComponentStorage!int, int));
@@ -100,6 +126,28 @@ struct EntitySet
 
 	int opApply(int delegate(in EntityId) del) {
 		return entities.opApply(del);
+	}
+
+	void serialize(Sink)(Sink sink)
+	{
+		encodeCborArrayHeader(sink, entities.length);
+		foreach(eid; entities) {
+			encodeCbor(sink, eid);
+		}
+	}
+
+	void deserialize(ubyte[] input)
+	{
+		entities.clear();
+		CborToken token = decodeCborToken(input);
+		if (token.type == CborTokenType.arrayHeader) {
+			size_t lengthToRead = cast(size_t)token.uinteger;
+			entities.reserve(lengthToRead);
+			while (lengthToRead > 0) {
+				entities.put(decodeCborSingle!EntityId(input));
+				--lengthToRead;
+			}
+		}
 	}
 }
 
