@@ -14,8 +14,12 @@ import datadriven.components;
 import datadriven.storage;
 import datadriven.entityman;
 
+import voxelman.container.buffer;
+import voxelman.world.storage.iomanager;
+
 void main()
 {
+	/*
 	writeln("BENCH ITERATION");
 	//benchIteration();
 	benchIteration2();
@@ -32,7 +36,7 @@ void main()
 	benchApiPartialJoinEman!CustomHashmapComponentStorage();
 	benchApiPartialJoinSet();
 	benchApiPartialJoinOnlySet();
-
+	*/
 	testEntityManager();
 }
 
@@ -53,12 +57,21 @@ void testEntityManager()
 	//writefln("%s", *eman.get!Transform(0));
 	//writefln("%s", *eman.get!Velocity(0));
 
+	///////////////////////////////////////////////////////////////
+	// test query
 	auto query = eman.query!(Transform, Velocity);
 
-	foreach(row; query)
+	void printEntities()
 	{
-		writefln("%s %s %s", row.id, *row.transform_0, *row.velocity_1);
+		foreach(row; query)
+			writefln("%s %s %s",
+				row.id,
+				*row.transform_0,
+				*row.velocity_1);
 	}
+
+	writefln("After add");
+	printEntities();
 
 	eman.remove(0);
 
@@ -67,4 +80,47 @@ void testEntityManager()
 
 	//writefln("%s", eman.get!Transform(0));
 	//writefln("%s", eman.get!Velocity(0));
+
+	///////////////////////////////////////////////////////////////
+	// test save/load
+
+	StringMap stringMap;
+	PluginDataSaver saver;
+	PluginDataLoader loader;
+	FakeDb db;
+	saver.stringMap = &stringMap;
+	loader.stringMap = &stringMap;
+	loader.getter = &db.getter;
+
+	// save
+	eman.save(saver);
+
+	db.populate(saver);
+	eman.removeAll();
+
+	writefln("After removeAll");
+	printEntities();
+
+	// load
+	eman.load(loader);
+
+	writefln("After load");
+	printEntities();
+}
+
+struct FakeDb
+{
+	ubyte[][ubyte[16]] entries;
+	void populate(ref PluginDataSaver saver)
+	{
+		foreach(ubyte[16] key, ubyte[] data; saver) {
+			entries[key] = data.dup;
+		}
+		saver.reset();
+	}
+
+	ubyte[] getter(ubyte[16] key)
+	{
+		return entries.get(key, null);
+	}
 }

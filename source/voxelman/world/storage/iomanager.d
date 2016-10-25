@@ -130,11 +130,11 @@ struct PluginDataSaver
 		endWrite(key);
 	}
 
-	package(voxelman.world) void reset() @nogc {
+	void reset() @nogc {
 		buffer.clear();
 	}
 
-	package(voxelman.world) int opApply(int delegate(ubyte[16] key, ubyte[] data) dg)
+	int opApply(int delegate(ubyte[16] key, ubyte[] data) dg)
 	{
 		ubyte[] data = buffer.data;
 		while(!data.empty)

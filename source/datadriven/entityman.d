@@ -3,11 +3,16 @@ module datadriven.entityman;
 import datadriven.api;
 import datadriven.storage;
 import datadriven.query;
+import voxelman.container.buffer;
+import voxelman.world.storage.iomanager;
 
 struct ComponentInfo
 {
-	string name;
+	IoKey dbKey;
 	void delegate(EntityId) remove;
+	void delegate() removeAll;
+	void delegate(Buffer!ubyte*) serialize;
+	void delegate(ubyte[]) deserialize;
 	void* storage;
 }
 
@@ -15,9 +20,13 @@ alias ComponentStorage(T) = CustomHashmapComponentStorage!T;
 
 struct TypedComponentInfo(C)
 {
-	string name;
+	IoKey dbKey;
 	void delegate(EntityId) remove;
+	void delegate() removeAll;
+	void delegate(Buffer!ubyte*) serialize;
+	void delegate(ubyte[]) deserialize;
 	ComponentStorage!C* storage;
+
 	static typeof(this)* fromUntyped(ComponentInfo* untyped)
 	{
 		return cast(typeof(this)*)untyped;
@@ -32,7 +41,14 @@ struct EntityManager
 	{
 		assert(typeid(C) !in componentMap);
 		auto storage = new ComponentStorage!C;
-		componentMap[typeid(C)] = new ComponentInfo(name, &storage.remove, storage);
+		componentMap[typeid(C)] =
+			new ComponentInfo(
+				IoKey(name),
+				&storage.remove,
+				&storage.removeAll,
+				&storage.serialize,
+				&storage.deserialize,
+				storage);
 	}
 
 	void add(Components...)(EntityId eid, Components components)
@@ -60,6 +76,14 @@ struct EntityManager
 		}
 	}
 
+	void removeAll()
+	{
+		foreach(info; componentMap.byValue)
+		{
+			info.removeAll();
+		}
+	}
+
 	auto query(Components...)()
 	{
 		// generate variables for typed storages
@@ -75,14 +99,21 @@ struct EntityManager
 		return mixin(genQueryCall!Components);
 	}
 
-	void serialize(Sink)(Sink sink)
+	void save(ref PluginDataSaver saver)
 	{
-
+		foreach(info; componentMap.byValue)
+		{
+			info.serialize(saver.beginWrite());
+			saver.endWrite(info.dbKey);
+		}
 	}
 
-	void deserialize(ubyte[] input)
+	void load(ref PluginDataLoader loader)
 	{
-
+		foreach(info; componentMap.byValue)
+		{
+			info.deserialize(loader.readEntryRaw(info.dbKey));
+		}
 	}
 }
 

@@ -2,6 +2,7 @@ module datadriven.storage;
 
 import datadriven.api;
 import cbor;
+import voxelman.container.buffer;
 
 struct HashmapComponentStorage(_ComponentType)
 {
@@ -56,6 +57,11 @@ struct CustomHashmapComponentStorage(_ComponentType)
 		components.remove(eid);
 	}
 
+	void removeAll()
+	{
+		components.clear();
+	}
+
 	size_t length() @property
 	{
 		return components.length;
@@ -66,11 +72,11 @@ struct CustomHashmapComponentStorage(_ComponentType)
 		return eid in components;
 	}
 
-	int opApply(int delegate(in ref EntityId, ref ComponentType) del) {
+	int opApply(int delegate(in EntityId, ref ComponentType) del) {
 		return components.opApply(del);
 	}
 
-	void serialize(Sink)(Sink sink)
+	void serialize(Buffer!ubyte* sink)
 	{
 		encodeCborMapHeader(sink, components.length);
 		foreach(key, value; components) {
@@ -82,6 +88,7 @@ struct CustomHashmapComponentStorage(_ComponentType)
 	void deserialize(ubyte[] input)
 	{
 		components.clear();
+		if (input.length == 0) return;
 		CborToken token = decodeCborToken(input);
 		if (token.type == CborTokenType.mapHeader) {
 			size_t lengthToRead = cast(size_t)token.uinteger;
@@ -114,6 +121,11 @@ struct EntitySet
 		entities.remove(eid);
 	}
 
+	void removeAll()
+	{
+		entities.clear();
+	}
+
 	size_t length() @property
 	{
 		return entities.length;
@@ -139,6 +151,7 @@ struct EntitySet
 	void deserialize(ubyte[] input)
 	{
 		entities.clear();
+		if (input.length == 0) return;
 		CborToken token = decodeCborToken(input);
 		if (token.type == CborTokenType.arrayHeader) {
 			size_t lengthToRead = cast(size_t)token.uinteger;
