@@ -113,7 +113,7 @@ struct HashMap(Key, Value, Key nullKey = Key.max)
 		return 0;
 	}
 
-	int opApply(int delegate(in ref Value) del) const {
+	int opApply(int delegate(const ref Value) del) const {
 		foreach (i; 0 .. keys.length)
 			if (keys[i] != nullKey)
 				if (auto ret = del(values[i]))
@@ -121,15 +121,7 @@ struct HashMap(Key, Value, Key nullKey = Key.max)
 		return 0;
 	}
 
-	//int opApply(int delegate(in ref Key, ref Value) del) {
-	//	foreach (i; 0 .. keys.length)
-	//		if (keys[i] != nullKey)
-	//			if (auto ret = del(keys[i], values[i]))
-	//				return ret;
-	//	return 0;
-	//}
-
-	int opApply(int delegate(in Key, ref Value) del) {
+	int opApply(int delegate(Key, ref Value) del) {
 		foreach (i; 0 .. keys.length)
 			if (keys[i] != nullKey)
 				if (auto ret = del(keys[i], values[i]))
@@ -137,7 +129,7 @@ struct HashMap(Key, Value, Key nullKey = Key.max)
 		return 0;
 	}
 
-	int opApply(int delegate(in ref Key, in ref Value) del) const {
+	int opApply(int delegate(const Key, const ref Value) del) const {
 		foreach (i; 0 .. keys.length)
 			if (keys[i] != nullKey)
 				if (auto ret = del(keys[i], values[i]))

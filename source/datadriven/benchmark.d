@@ -267,8 +267,8 @@ void benchApiFullJoin2(alias StorageT)()
 
 	foreach(index; 0..entityCount)
 	{
-		transformStorage.add(EntityId(index), Transform(0, 0, 0));
-		velocityStorage.add(EntityId(index), Velocity(1, 1, 1));
+		transformStorage.set(EntityId(index), Transform(0, 0, 0));
+		velocityStorage.set(EntityId(index), Velocity(1, 1, 1));
 	}
 
 	auto query = componentQuery(transformStorage, velocityStorage);
@@ -294,10 +294,10 @@ void benchApiFullJoin4(alias StorageT)()
 	StorageT!Velocity velocityStorage3;
 
 	foreach(index; 0..entityCount) {
-		transformStorage.add(EntityId(index), Transform(0, 0, 0));
-		velocityStorage1.add(EntityId(index), Velocity(1, 1, 1));
-		velocityStorage2.add(EntityId(index), Velocity(1, 1, 1));
-		velocityStorage3.add(EntityId(index), Velocity(1, 1, 1));
+		transformStorage.set(EntityId(index), Transform(0, 0, 0));
+		velocityStorage1.set(EntityId(index), Velocity(1, 1, 1));
+		velocityStorage2.set(EntityId(index), Velocity(1, 1, 1));
+		velocityStorage3.set(EntityId(index), Velocity(1, 1, 1));
 	}
 
 	auto query = componentQuery(transformStorage, velocityStorage1, velocityStorage2, velocityStorage3);
@@ -323,14 +323,14 @@ void benchApiPartialJoin(alias StorageT)()
 	StorageT!Velocity velocityStorage3;
 
 	foreach(index; 0..entityCountMin) {
-		velocityStorage1.add(EntityId(index), Velocity(1, 1, 1));
-		velocityStorage2.add(EntityId(index), Velocity(1, 1, 1));
+		velocityStorage1.set(EntityId(index), Velocity(1, 1, 1));
+		velocityStorage2.set(EntityId(index), Velocity(1, 1, 1));
 	}
 	foreach(index; 0..entityCountMed) {
-		velocityStorage3.add(EntityId(index), Velocity(1, 1, 1));
+		velocityStorage3.set(EntityId(index), Velocity(1, 1, 1));
 	}
 	foreach(index; 0..entityCountMax) {
-		transformStorage.add(EntityId(index), Transform(0, 0, 0));
+		transformStorage.set(EntityId(index), Transform(0, 0, 0));
 	}
 
 	auto query = componentQuery(transformStorage, velocityStorage1, velocityStorage2, velocityStorage3);
@@ -358,13 +358,13 @@ void benchApiPartialJoinEman(alias StorageT)()
 	eman.registerComponent!Velocity3("velocity3");
 
 	foreach(index; 0..entityCountMin) {
-		eman.add(EntityId(index), Velocity1(1, 1, 1), Velocity2(1, 1, 1));
+		eman.set(EntityId(index), Velocity1(1, 1, 1), Velocity2(1, 1, 1));
 	}
 	foreach(index; 0..entityCountMed) {
-		eman.add(EntityId(index), Velocity3(1, 1, 1));
+		eman.set(EntityId(index), Velocity3(1, 1, 1));
 	}
 	foreach(index; 0..entityCountMax) {
-		eman.add(EntityId(index), Transform(0, 0, 0));
+		eman.set(EntityId(index), Transform(0, 0, 0));
 	}
 
 	auto query = eman.query!(Transform, Velocity1, Velocity2, Velocity3);
@@ -399,15 +399,15 @@ void benchApiPartialJoinSet()
 	CustomHashmapComponentStorage!Velocity velocityStorage3;
 
 	foreach(index; 0..entityCountMin) {
-		entities.add(index);
-		velocityStorage1.add(EntityId(index), Velocity(1, 1, 1));
-		velocityStorage2.add(EntityId(index), Velocity(1, 1, 1));
+		entities.set(index);
+		velocityStorage1.set(EntityId(index), Velocity(1, 1, 1));
+		velocityStorage2.set(EntityId(index), Velocity(1, 1, 1));
 	}
 	foreach(index; 0..entityCountMed) {
-		velocityStorage3.add(EntityId(index), Velocity(1, 1, 1));
+		velocityStorage3.set(EntityId(index), Velocity(1, 1, 1));
 	}
 	foreach(index; 0..entityCountMax) {
-		transformStorage.add(EntityId(index), Transform(0, 0, 0));
+		transformStorage.set(EntityId(index), Transform(0, 0, 0));
 	}
 
 	auto query = componentQuery(entities, transformStorage, velocityStorage1, velocityStorage2, velocityStorage3);
@@ -433,14 +433,14 @@ void benchApiPartialJoinOnlySet()
 	EntitySet entities4;
 
 	foreach(index; 0..entityCountMin) {
-		entities1.add(index);
-		entities2.add(index);
+		entities1.set(index);
+		entities2.set(index);
 	}
 	foreach(index; 0..entityCountMed) {
-		entities3.add(index);
+		entities3.set(index);
 	}
 	foreach(index; 0..entityCountMax) {
-		entities4.add(index);
+		entities4.set(index);
 	}
 
 	auto query = componentQuery(entities1, entities2, entities3, entities4);

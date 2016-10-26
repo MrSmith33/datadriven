@@ -12,7 +12,7 @@ template isComponentStorage(CS, C)
 		C c = C.init;
 		EntityId id = EntityId.init;
 
-		cs.add(id, c); // Can add component
+		cs.set(id, c); // Can add component
 		cs.remove(id); // Can remove component
 		C* cptr = cs.get(id); // Can get component pointer
 
@@ -41,7 +41,7 @@ template isEntitySet(S)
 		S s = S.init;
 		EntityId id = EntityId.init;
 
-		s.add(id); // Can add component
+		s.set(id); // Can add component
 		s.remove(id); // Can remove component
 		bool contains = s.get(id); // Can check presence
 
@@ -57,7 +57,7 @@ unittest
 	struct A {}
 	struct B
 	{
-		void add(EntityId);
+		void set(EntityId);
 		void remove(EntityId);
 		bool get(EntityId);
 		int opApply(int delegate(in EntityId) del) {
@@ -66,7 +66,7 @@ unittest
 	}
 	struct C
 	{
-		void add(EntityId, int);
+		void set(EntityId, int);
 		void remove(EntityId);
 		int* get(EntityId);
 		int opApply(int delegate(in EntityId, ref int) del) {

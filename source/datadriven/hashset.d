@@ -87,15 +87,7 @@ struct HashSet(Key, Key nullKey = Key.max)
 		return idx != size_t.max;
 	}
 
-	int opApply(int delegate(in ref Key) del) {
-		foreach (i; 0 .. keys.length)
-			if (keys[i] != nullKey)
-				if (auto ret = del(keys[i]))
-					return ret;
-		return 0;
-	}
-
-	int opApply(int delegate(in Key) del) {
+	int opApply(int delegate(Key) del) {
 		foreach (i; 0 .. keys.length)
 			if (keys[i] != nullKey)
 				if (auto ret = del(keys[i]))

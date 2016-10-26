@@ -19,7 +19,7 @@ import voxelman.world.storage.iomanager;
 
 void main()
 {
-	/*
+
 	writeln("BENCH ITERATION");
 	//benchIteration();
 	benchIteration2();
@@ -36,7 +36,7 @@ void main()
 	benchApiPartialJoinEman!CustomHashmapComponentStorage();
 	benchApiPartialJoinSet();
 	benchApiPartialJoinOnlySet();
-	*/
+
 	testEntityManager();
 }
 
@@ -44,22 +44,24 @@ void testEntityManager()
 {
 	EntityManager eman;
 
-	eman.registerComponent!Transform("transform");
-	eman.registerComponent!Velocity("velocity");
+	eman.registerComponent!Transform("transform"); // stored in HashMap
+	eman.registerComponent!Velocity("velocity"); // stored in HashMap
+	eman.registerComponent!FlagComponent("flag"); // stored in HashSet
 
-	eman.add(0, Transform(0, 0, 0), Velocity(10, 10, 10));
-	eman.add(1, Transform(1, 1, 1), Velocity(10, 10, 10));
-	eman.add(2, Transform(2, 2, 2), Velocity(10, 10, 10));
+	eman.set(0, Transform(0, 0, 0), Velocity(10, 10, 10), FlagComponent());
+	eman.set(1, Transform(1, 1, 1), Velocity(10, 10, 10), FlagComponent());
+	eman.set(2, Transform(2, 2, 2), Velocity(10, 10, 10), FlagComponent());
+	eman.set(3, Transform(3, 3, 3), Velocity(10, 10, 10));
 
-	assert(*eman.get!Transform(0) == Transform(0,0,0));
+	assert(*eman.get!Transform(0) == Transform(0, 0, 0));
 	assert(*eman.get!Velocity(0) == Velocity(10, 10, 10));
 
-	//writefln("%s", *eman.get!Transform(0));
-	//writefln("%s", *eman.get!Velocity(0));
+	//writefln("%s", *eman.get!Transform(0)); // prints Transform(0, 0, 0)
+	//writefln("%s", *eman.get!Velocity(0)); // prints Velocity(10, 10, 10)
 
 	///////////////////////////////////////////////////////////////
 	// test query
-	auto query = eman.query!(Transform, Velocity);
+	auto query = eman.query!(Transform, Velocity, FlagComponent);
 
 	void printEntities()
 	{
@@ -70,13 +72,19 @@ void testEntityManager()
 				*row.velocity_1);
 	}
 
-	writefln("After add");
+	writefln("After set");
 	printEntities();
 
+	writefln("Only Transform");
+	foreach(row; eman.query!Transform)
+		writefln("%s %s", row.id, *row.transform_0);
+
+	// Remove entity
 	eman.remove(0);
 
-	assert(eman.get!Transform(0) is null);
-	assert(eman.get!Velocity(0) is null);
+	assert(!eman.has!Transform(0));
+	assert(!eman.has!Velocity(0));
+	assert(!eman.has!FlagComponent(0));
 
 	//writefln("%s", eman.get!Transform(0));
 	//writefln("%s", eman.get!Velocity(0));

@@ -9,7 +9,7 @@ struct HashmapComponentStorage(_ComponentType)
 	private ComponentType[EntityId] components;
 	alias ComponentType = _ComponentType;
 
-	void add(EntityId eid, ComponentType component)
+	void set(EntityId eid, ComponentType component)
 	{
 		assert(eid !in components);
 		components[eid] = component;
@@ -46,7 +46,7 @@ struct CustomHashmapComponentStorage(_ComponentType)
 	private HashMap!(EntityId, ComponentType) components;
 	alias ComponentType = _ComponentType;
 
-	void add(EntityId eid, ComponentType component)
+	void set(EntityId eid, ComponentType component)
 	{
 		assert(eid !in components);
 		components[eid] = component;
@@ -72,7 +72,7 @@ struct CustomHashmapComponentStorage(_ComponentType)
 		return eid in components;
 	}
 
-	int opApply(int delegate(in EntityId, ref ComponentType) del) {
+	int opApply(int delegate(EntityId, ref ComponentType) del) {
 		return components.opApply(del);
 	}
 
@@ -110,7 +110,7 @@ struct EntitySet
 {
 	private HashSet!EntityId entities;
 
-	void add(EntityId eid)
+	void set(EntityId eid)
 	{
 		assert(eid !in entities);
 		entities.put(eid);
@@ -136,11 +136,11 @@ struct EntitySet
 		return eid in entities;
 	}
 
-	int opApply(int delegate(in EntityId) del) {
+	int opApply(int delegate(EntityId) del) {
 		return entities.opApply(del);
 	}
 
-	void serialize(Sink)(Sink sink)
+	void serialize(Buffer!ubyte* sink)
 	{
 		encodeCborArrayHeader(sink, entities.length);
 		foreach(eid; entities) {
