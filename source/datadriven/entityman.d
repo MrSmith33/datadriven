@@ -16,12 +16,10 @@ private struct ComponentInfo
 	void* storage;
 }
 
+enum bool isFlagComponent(C) = C.tupleof.length == 0;
+
 private struct _Totally_empty_struct {}
-template isFlagComponent(C)
-{
-	enum bool isFlagComponent =
-		__traits(allMembers, C).length == __traits(allMembers, _Totally_empty_struct).length;
-}
+static assert(isFlagComponent!_Totally_empty_struct);
 
 template ComponentStorage(C)
 {
@@ -158,7 +156,7 @@ private  string genTempComponentStorages(Components...)()
 {
 	import std.conv : to;
 	string result;
-	
+
 	foreach(i, C; Components)
 	{
 		result ~= "ComponentStorage!(Components[" ~ i.to!string ~ "])* " ~
