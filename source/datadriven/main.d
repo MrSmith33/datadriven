@@ -44,9 +44,9 @@ void testEntityManager()
 {
 	EntityManager eman;
 
-	eman.registerComponent!Transform("transform"); // stored in HashMap
-	eman.registerComponent!Velocity("velocity"); // stored in HashMap
-	eman.registerComponent!FlagComponent("flag"); // stored in HashSet
+	eman.registerComponent!Transform(); // stored in HashMap
+	eman.registerComponent!Velocity(); // stored in HashMap
+	eman.registerComponent!FlagComponent(); // stored in HashSet
 
 	eman.set(0, Transform(0, 0, 0), Velocity(10, 10, 10), FlagComponent());
 	eman.set(1, Transform(1, 1, 1), Velocity(10, 10, 10), FlagComponent());

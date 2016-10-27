@@ -352,10 +352,10 @@ void benchApiPartialJoinEman(alias StorageT)()
 {
 	EntityManager eman;
 
-	eman.registerComponent!Transform("transform");
-	eman.registerComponent!Velocity1("velocity1");
-	eman.registerComponent!Velocity2("velocity2");
-	eman.registerComponent!Velocity3("velocity3");
+	eman.registerComponent!Transform();
+	eman.registerComponent!Velocity1();
+	eman.registerComponent!Velocity2();
+	eman.registerComponent!Velocity3();
 
 	foreach(index; 0..entityCountMin) {
 		eman.set(EntityId(index), Velocity1(1, 1, 1), Velocity2(1, 1, 1));

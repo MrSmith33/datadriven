@@ -51,13 +51,13 @@ struct EntityManager
 
 	/// Before using component type in every other method, register it here.
 	/// name is used for (de)serialization.
-	void registerComponent(C)(string name)
+	void registerComponent(C)()
 	{
 		assert(typeid(C) !in componentMap);
 		auto storage = new ComponentStorage!C;
 		componentMap[typeid(C)] =
 			new ComponentInfo(
-				IoKey(name),
+				IoKey(componentKey!C),
 				&storage.remove,
 				&storage.removeAll,
 				&storage.serialize,

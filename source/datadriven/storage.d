@@ -11,7 +11,6 @@ struct HashmapComponentStorage(_ComponentType)
 
 	void set(EntityId eid, ComponentType component)
 	{
-		assert(eid !in components);
 		components[eid] = component;
 	}
 
@@ -48,7 +47,6 @@ struct CustomHashmapComponentStorage(_ComponentType)
 
 	void set(EntityId eid, ComponentType component)
 	{
-		assert(eid !in components);
 		components[eid] = component;
 	}
 
@@ -112,7 +110,6 @@ struct EntitySet
 
 	void set(EntityId eid)
 	{
-		assert(eid !in entities);
 		entities.put(eid);
 	}
 

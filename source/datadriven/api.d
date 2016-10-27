@@ -2,6 +2,19 @@ module datadriven.api;
 
 alias EntityId = ulong;
 
+struct Component {
+	string key;
+}
+
+template componentKey(C)
+{
+	import std.traits : hasUDA, getUDAs;
+	static if (hasUDA!(C, Component))
+		enum string componentKey = getUDAs!(C, Component)[0].key;
+	else
+		static assert(false, "Component " ~ C.stringof ~ " has no Component UDA");
+}
+
 // tests if CS is a Component storage of components C
 template isComponentStorage(CS, C)
 {
