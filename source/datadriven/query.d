@@ -120,7 +120,7 @@ string genComponentIterationCode(ComponentStorages...)()
 
 		static if(isAnyComponentStorage!CS_1)
 		{
-			result ~=  "\t\tforeach(key, value; " ~ genComponentStorageName!(CS_1, i) ~ ") {\n";
+			result ~=  "\t\tforeach(key, ref value; " ~ genComponentStorageName!(CS_1, i) ~ ") {\n";
 			// gen component selection for shortest table
 			result ~=  "\t\t\trow.id = key;\n";
 			result ~=  "\t\t\trow." ~ genRowComponentName!(CS_1, i) ~" = &value;\n\n";
@@ -148,7 +148,7 @@ string genComponentIterationCode(ComponentStorages...)()
 			{
 				string jstr = j.to!string;
 				result ~= "\t\t\tbool component_"~ jstr ~" = " ~ genComponentStorageName!(CS_2, j) ~ ".get(key);\n";
-				result ~= "\t\t\tif (!component_"~ jstr ~") continue;\n\n";
+				result ~= "\t\t\tif (!component_"~ jstr ~") continue;\n";
 			}
 		}
 
