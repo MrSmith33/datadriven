@@ -8,7 +8,11 @@ This is entity component system (ECS) type library.
 
 ## Example
 
-```
+```D
+@Component("component.Transform") struct Transform { float x, y, z; }
+@Component("component.Velocity") struct Velocity  { float x, y, z; }
+@Component("component.FlagComponent") struct FlagComponent {}
+
 EntityManager eman;
 
 eman.registerComponent!Transform(); // stored in HashMap
@@ -23,6 +27,7 @@ eman.set(3, Transform(3, 3, 3), Velocity(10, 10, 10));
 // will get all entities with given component types
 auto query = eman.query!(Transform, Velocity, FlagComponent);
 
+// Will not print entity 3
 foreach(row; query) {
 	writefln("%s %s %s", row.id, *row.transform_0, *row.velocity_1);
 }
