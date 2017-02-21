@@ -17,8 +17,11 @@ import datadriven.entityman;
 import voxelman.container.buffer;
 import voxelman.world.storage.iomanager;
 
+import datadriven.bench_eplus;
+
 void main()
 {
+	bench_EntityPlus();
 
 	writeln("BENCH ITERATION");
 	//benchIteration();

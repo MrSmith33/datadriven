@@ -152,7 +152,7 @@ struct EntityManager
 	}
 }
 
-private  string genTempComponentStorages(Components...)()
+private string genTempComponentStorages(Components...)()
 {
 	import std.conv : to;
 	string result;
